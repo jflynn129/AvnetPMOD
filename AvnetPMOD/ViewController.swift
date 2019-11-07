@@ -31,6 +31,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
     public private(set) var advertisedName   : String?
     public private(set) var rssi             : NSNumber = 0.0
     public var ledColor                      : uint = 0
+    public var binioState                    : Bool=false
     
     // -------------------------------------------------------------------
     //MARK: - BlueTooth actions
@@ -61,6 +62,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         if( seque.identifier == "LEDViewController" ) {
             let svc = seque.destination as! LEDViewController
             svc.localLEDcolor = ledColor
+            svc.localBINIOstate = binioState
         }
     }
 
@@ -153,7 +155,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         }
     }
     
-
+    @IBAction func binioSwitch(_ sender: Any) {
+    }
+    
 }
 
 

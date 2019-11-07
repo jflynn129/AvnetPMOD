@@ -203,6 +203,19 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eEg-0z-Yia">
+                                <rect key="frame" x="72" y="590" width="51" height="31"/>
+                                <connections>
+                                    <action selector="binioSwitch:" destination="TTs-OL-o0e" eventType="valueChanged" id="4SH-dL-3pN"/>
+                                    <action selector="binioSwitch:" destination="eVl-lE-oJc" eventType="valueChanged" id="Jl7-7E-3np"/>
+                                </connections>
+                            </switch>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="BINIO is XXX" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="PRI-EJ-BIm">
+                                <rect key="frame" x="142" y="595" width="99" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
@@ -216,20 +229,24 @@
                             <constraint firstItem="yKk-e9-bws" firstAttribute="top" secondItem="8WE-oO-J7r" secondAttribute="bottom" constant="34" id="Eqt-A4-QTk"/>
                             <constraint firstItem="yHV-5B-gOi" firstAttribute="centerX" secondItem="wPh-WC-7l7" secondAttribute="centerX" id="HM2-4u-aQm"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="8WE-oO-J7r" secondAttribute="trailing" symbolic="YES" id="KzX-wZ-Mvd"/>
+                            <constraint firstItem="PRI-EJ-BIm" firstAttribute="leading" secondItem="eEg-0z-Yia" secondAttribute="trailing" constant="21" id="PDq-mq-yIR"/>
                             <constraint firstItem="DAv-4w-eXT" firstAttribute="leading" secondItem="T7h-Xp-YrV" secondAttribute="leading" constant="299" id="Pu2-Gk-9g7"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="yKk-e9-bws" secondAttribute="trailing" symbolic="YES" id="QIn-Jm-Phg"/>
+                            <constraint firstItem="PRI-EJ-BIm" firstAttribute="centerY" secondItem="eEg-0z-Yia" secondAttribute="centerY" id="QeK-03-vIs"/>
                             <constraint firstAttribute="bottom" secondItem="yHV-5B-gOi" secondAttribute="bottom" constant="388" id="RHc-wR-ld9"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" secondItem="DAv-4w-eXT" secondAttribute="trailing" constant="36" id="UVL-cp-0Z0"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="bottom" secondItem="DAv-4w-eXT" secondAttribute="bottom" constant="66" id="VlQ-pO-3eh"/>
                             <constraint firstItem="u54-Mi-YnC" firstAttribute="centerX" secondItem="eUz-dr-lYY" secondAttribute="centerX" id="W1R-Pz-syi"/>
                             <constraint firstItem="eUz-dr-lYY" firstAttribute="top" secondItem="u54-Mi-YnC" secondAttribute="bottom" constant="8.5" id="W9Y-vT-tQ4"/>
                             <constraint firstItem="vfF-LM-lxB" firstAttribute="leading" secondItem="T7h-Xp-YrV" secondAttribute="leading" constant="99" id="bpF-GN-0uH"/>
+                            <constraint firstItem="PRI-EJ-BIm" firstAttribute="top" secondItem="uko-lz-Npc" secondAttribute="bottom" constant="57" id="i1E-wP-CfD"/>
                             <constraint firstItem="uko-lz-Npc" firstAttribute="leading" secondItem="T7h-Xp-YrV" secondAttribute="leading" constant="72" id="mrO-Ti-J9E"/>
                             <constraint firstItem="yKk-e9-bws" firstAttribute="leading" secondItem="8WE-oO-J7r" secondAttribute="leading" id="rH6-mM-nbv"/>
                             <constraint firstItem="eUz-dr-lYY" firstAttribute="top" secondItem="T7h-Xp-YrV" secondAttribute="top" constant="73" id="s6f-Ba-37x"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" secondItem="uko-lz-Npc" secondAttribute="trailing" constant="104" id="ssA-VO-AoF"/>
                             <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" secondItem="fi8-5T-XzR" secondAttribute="trailing" constant="83.5" id="tpX-pe-sJo"/>
                             <constraint firstItem="u54-Mi-YnC" firstAttribute="leading" secondItem="uko-lz-Npc" secondAttribute="leading" id="xbP-Uj-GUC"/>
+                            <constraint firstItem="T7h-Xp-YrV" firstAttribute="trailing" secondItem="PRI-EJ-BIm" secondAttribute="trailing" constant="173" id="ywm-Fv-KlU"/>
                             <constraint firstItem="yKk-e9-bws" firstAttribute="top" secondItem="wPh-WC-7l7" secondAttribute="top" constant="301" id="zKk-9c-EJv"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="T7h-Xp-YrV"/>
@@ -238,6 +255,8 @@
                     <navigationItem key="navigationItem" id="lDX-Pm-tgP"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="binioState" destination="PRI-EJ-BIm" id="taz-6J-wSW"/>
+                        <outlet property="binioSwitch" destination="eEg-0z-Yia" id="S4A-6Y-ed1"/>
                         <outlet property="blueSwitchState" destination="8mG-Us-AxI" id="opt-Co-UVU"/>
                         <outlet property="greenSwitchState" destination="13r-x7-Abq" id="9Mo-hu-ebq"/>
                         <outlet property="ledColor" destination="fi8-5T-XzR" id="Tje-lN-6Xw"/>
@@ -245,6 +264,7 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2HB-jG-Igo" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <exit id="TTs-OL-o0e" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="944.92753623188412" y="140.625"/>
         </scene>
