@@ -10,17 +10,29 @@ import UIKit
 
 class LEDViewController: UIViewController {
 
-    @IBOutlet weak var ledColor: UILabel!
-    @IBOutlet weak var redSwitchState: UISwitch!
-    @IBOutlet weak var blueSwitchState: UISwitch!
+    @IBOutlet weak var ledColor        : UILabel!
+    @IBOutlet weak var redSwitchState  : UISwitch!
+    @IBOutlet weak var blueSwitchState : UISwitch!
     @IBOutlet weak var greenSwitchState: UISwitch!
+    @IBOutlet weak var binioState      : UILabel!
+    @IBOutlet weak var binioSwitch     : UISwitch!
     
     var localLEDcolor          : uint=0
+    var localBINIOstate        : Bool = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        if( localBINIOstate ) {
+            binioSwitch.isOn = true
+            binioState.text = "BINIO is ON "
+        }
+        else {
+            binioSwitch.isOn = false
+            binioState.text = "BINIO is OFF"
+        }
+
         if ( (localLEDcolor & 1) == 1 ) {
             redSwitchState.isOn = true
         }
@@ -66,6 +78,12 @@ class LEDViewController: UIViewController {
             localLEDcolor |= 2
         }
         setColorLabel(localLEDcolor)
+    }
+    
+    @IBAction func binioSwitch(_ sender: Any) {
+        localBINIOstate = !localBINIOstate
+        binioState.text = "BINIO is " + (localBINIOstate ? "ON " : "OFF")
+        
     }
     
     @IBAction func greenSwitch(_ sender: Any) {
