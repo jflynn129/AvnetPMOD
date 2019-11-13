@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BECB22082373193700E067CB /* BLEController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BECB22072373193700E067CB /* BLEController.swift */; };
+		4333C3B3237AFCD3003F7E65 /* BlinkyPeripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4333C3B2237AFCD3003F7E65 /* BlinkyPeripheral.swift */; };
 		BED96E252373B9C4004CFBFB /* Icon-App-76x76@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = BED96E152373B9C3004CFBFB /* Icon-App-76x76@2x.png */; };
 		BED96E262373B9C4004CFBFB /* Icon-App-29x29@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = BED96E162373B9C3004CFBFB /* Icon-App-29x29@1x.png */; };
 		BED96E272373B9C4004CFBFB /* Icon-App-40x40@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = BED96E172373B9C3004CFBFB /* Icon-App-40x40@1x.png */; };
@@ -34,7 +34,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		BECB22072373193700E067CB /* BLEController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BLEController.swift; sourceTree = "<group>"; };
+		4333C3B2237AFCD3003F7E65 /* BlinkyPeripheral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlinkyPeripheral.swift; sourceTree = "<group>"; };
 		BED96E152373B9C3004CFBFB /* Icon-App-76x76@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-76x76@2x.png"; sourceTree = "<group>"; };
 		BED96E162373B9C3004CFBFB /* Icon-App-29x29@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-29x29@1x.png"; sourceTree = "<group>"; };
 		BED96E172373B9C3004CFBFB /* Icon-App-40x40@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-App-40x40@1x.png"; sourceTree = "<group>"; };
@@ -115,9 +115,9 @@
 		BEF0C893236BA63A002AE88F /* AvnetPMOD */ = {
 			isa = PBXGroup;
 			children = (
+				4333C3B2237AFCD3003F7E65 /* BlinkyPeripheral.swift */,
 				BEF0C894236BA63A002AE88F /* AppDelegate.swift */,
 				BEF0C896236BA63A002AE88F /* SceneDelegate.swift */,
-				BECB22072373193700E067CB /* BLEController.swift */,
 				BEF0C898236BA63A002AE88F /* ViewController.swift */,
 				BEEA6598236F250000F43E9B /* LEDViewController.swift */,
 				BEF0C89A236BA63A002AE88F /* Main.storyboard */,
@@ -218,7 +218,7 @@
 			files = (
 				BEF0C899236BA63A002AE88F /* ViewController.swift in Sources */,
 				BEF0C895236BA63A002AE88F /* AppDelegate.swift in Sources */,
-				BECB22082373193700E067CB /* BLEController.swift in Sources */,
+				4333C3B3237AFCD3003F7E65 /* BlinkyPeripheral.swift in Sources */,
 				BEEA6599236F250000F43E9B /* LEDViewController.swift in Sources */,
 				BEF0C897236BA63A002AE88F /* SceneDelegate.swift in Sources */,
 			);

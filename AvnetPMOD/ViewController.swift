@@ -5,16 +5,18 @@
 //  Created by James Flynn on 10/31/19.
 //  Copyright © 2019 James Flynn. All rights reserved.
 //
+// This is the Main Screen View Controller.  The only control this view has is to connect to the
+// PMOD or not.  Once connected, the variable cbCentralManager is set and used by the other views.
+//
 
 import UIKit
 import CoreBluetooth
-
 
 public let nordicPMODServiceUUID  = CBUUID.init(string: "00001523-1212-EFDE-1523-785FEABCD123")
 public let ledCharacteristicUUID  = CBUUID.init(string: "00001525-1212-EFDE-1523-785FEABCD123")
 
 class ViewController: UIViewController, CBCentralManagerDelegate {
-    
+
     // MARK: - Outlet and Action variables
     @IBOutlet weak var statusLabel           : UILabel!
     @IBOutlet weak var requestedActionButton : UIButton!
@@ -23,47 +25,37 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
     var requestedActionState                 : uint = 0
 
     // MARK: - Properties Used
-    private var hapticGenerator              : NSObject?             // iOS10 and higher only
     private var cbCentralManager             : CBCentralManager!
     private var cbPeripheral                 : CBPeripheral!
-    private var ledCharacteristic            : CBCharacteristic?
+    private var blinkyPeripheral             : BlinkyPeripheral!
+    private var discoveredPeripherals        = [BlinkyPeripheral]()
     
     public private(set) var advertisedName   : String?
     public private(set) var rssi             : NSNumber = 0.0
-    public var ledColor                      : uint = 0
-    public var binioState                    : Bool=false
+    var pmodFound                            : Bool = false
     
     // -------------------------------------------------------------------
     //MARK: - BlueTooth actions
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == .poweredOn {
-            print("central.state is .poweredOn")
-            cbCentralManager.scanForPeripherals(withServices: [nordicPMODServiceUUID], options:[CBCentralManagerScanOptionAllowDuplicatesKey : false])
-        }
-    }
-
-
-    // ----------------------------------------------------------------------
-    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
-                        advertisementData: [String: Any], rssi RSSI: NSNumber) {
-      print(peripheral)
-    }
 
     // -------------------------------------------------------------------
     // MARK: - UIView actions
     // Just before the UI view is displayed, connect the CBCentralManager to
     // this view so we can handle its events.
     override func viewWillAppear(_ animated: Bool) {
+        print("in viewWillAppear")
         super.viewWillAppear(animated)
-        cbCentralManager = CBCentralManager(delegate: self, queue: nil)
+        discoveredPeripherals.removeAll()
     }
 
     override func prepare (for seque: UIStoryboardSegue, sender: Any!) {
         if( seque.identifier == "LEDViewController" ) {
-            let svc = seque.destination as! LEDViewController
-            svc.localLEDcolor = ledColor
-            svc.localBINIOstate = binioState
-        }
+            print("in prepare...")
+            if let pmod = blinkyPeripheral {
+                print("and calling setPMOD()")
+                let destView = seque.destination as! LEDViewController
+                destView.setPMOD(pmod)
+                }
+            }
     }
 
     // -------------------------------------------------------------------
@@ -71,7 +63,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do additional setup after loading the view.
-
+        pmodFound = false
+        cbCentralManager = CBCentralManager(delegate: self, queue: nil)
         statusLabel.text = "Not Connected!"
         btImage.isHidden = true
         requestedActionButton.setTitle("Search?", for:[])
@@ -107,24 +100,40 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         // 3. Disconnect from the PMOD
         
         switch( requestedActionState){
-        case 0:
-            statusLabel.text = ""
-            btImage.isHidden = false
-            searchActivity.startAnimating()
-            requestedActionButton.setTitle("Stop Search?", for: [])
-            requestedActionState = 1
+        case 0:  // we are searching for a PMOD device
+            if (cbCentralManager.state == .poweredOn) {
+                statusLabel.text = ""
+                btImage.isHidden = false
+                searchActivity.startAnimating()
+                if !cbCentralManager.isScanning  {
+                    print ("start pmod search.")
+                    cbCentralManager.scanForPeripherals(withServices: [BlinkyPeripheral.nordicBlinkyServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey:true])
+                }
+                requestedActionButton.setTitle("Stop Search?", for: [])
+                requestedActionState = 1
+            }
+            else {
+                print("Bluetooth is powered off!")
+            }
             break;
-        case 1:
+        case 1:  // we were searching for a PMOD but user requested us to stop
+            cbCentralManager.stopScan()
+            print("Stopping search")
             btImage.isHidden = true
             searchActivity.stopAnimating()
-            requestedActionButton.setTitle("Stoping Search!", for: [])
-            requestedActionState = 2
+            discoveredPeripherals.removeAll()
+            requestedActionButton.setTitle("Search?", for:[])
+            requestedActionState = 0
+            pmodFound = false
             break;
-        case 2:
-            requestedActionButton.setTitle("Disconnected!", for: [])
+        case 2:  // We are connected and can begin manipulating the PMOD
+            requestedActionButton.setTitle("Disconnect?", for: [])
             requestedActionState = 3
             break;
-        case 3:
+        case 3:  // we were connected and user requested we disconnect
+            requestedActionState = 4
+            break;
+        case 4:  // we are not connected and asking user if we should search
             requestedActionButton.setTitle("Search?", for: [])
             statusLabel.text = "Not Connected!"
             requestedActionState = 0
@@ -132,31 +141,36 @@ class ViewController: UIViewController, CBCentralManagerDelegate {
         default:
             break;
         }
-        
     }
     
-    // -------------------------------------------------------------------
-    //MARK: - Haptics actions
-    //These functions provide user feedback in terms of phone vibration. They only
-    //work with using iOS v10 and higher. When a PMOD is found, the user is
-    //notified via HapticFeedback
-    
-    private func prepareHaptics() {
-        if #available(iOS 10.0,*) {
-            hapticGenerator = UIImpactFeedbackGenerator(style: .heavy)
-            (hapticGenerator as? UIImpactFeedbackGenerator)?.prepare()
+    func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
+        let newPeripheral = BlinkyPeripheral(withPeripheral: peripheral, advertisementData: advertisementData, andRSSI: RSSI, using: cbCentralManager)
+        if !discoveredPeripherals.contains(newPeripheral) {
+            print("in centralManager function, found a new peripheral!", newPeripheral)
+            if advertisedName == "Nordic_Blinky" {
+                pmodFound = true
+                requestedActionState = 2
+            }
+            advertisedName = newPeripheral.advertisedName
+            rssi = newPeripheral.RSSI
+            print(newPeripheral)
+            blinkyPeripheral = newPeripheral
+            statusLabel.text = (newPeripheral.advertisedName!) + ":" + rssi.stringValue
+            print("    PMOD Name = ", advertisedName ?? String())
+            print("RSSI strength = ", rssi)
+            discoveredPeripherals.append(newPeripheral)
         }
     }
 
-    // -------------------------------------------------------------------
-    private func buttonTapHapticFeedback() {
-        if #available(iOS 10.0, *) {
-            (hapticGenerator as? UIImpactFeedbackGenerator)?.impactOccurred()
-        }
-    }
-    
-    @IBAction func binioSwitch(_ sender: Any) {
-    }
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+         if central.state == .poweredOn {
+             print("going to scan for peripherals")
+             cbCentralManager.scanForPeripherals(withServices: [BlinkyPeripheral.nordicBlinkyServiceUUID], options: [CBCentralManagerScanOptionAllowDuplicatesKey:true])
+         }
+         else {
+             print("BT now powered on!")
+         }
+     }
     
 }
 

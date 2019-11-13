@@ -1,10 +1,19 @@
+//
+//  BlinkyPeripheral.swift
+//  nRFBlinky
+//
+//  Created by Mostafa Berg on 28/11/2017.
+//  Modified by Aleksander Nowakowski on 13/02/2019
+//  Copyright © 2017 Nordic Semiconductor ASA. All rights reserved.
+//
 
 import UIKit
 import CoreBluetooth
 
 protocol BlinkyDelegate {
-    func blinkyDidConnect(ledSupported: Bool)
+    func blinkyDidConnect(ledSupported: Bool, buttonSupported: Bool)
     func blinkyDidDisconnect()
+    func buttonStateChanged(isPressed: Bool)
     func ledStateChanged(isOn: Bool)
 }
 
@@ -13,29 +22,34 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
     // MARK: - Blinky services and charcteristics Identifiers
     
     public static let nordicBlinkyServiceUUID  = CBUUID.init(string: "00001523-1212-EFDE-1523-785FEABCD123")
+    public static let buttonCharacteristicUUID = CBUUID.init(string: "00001524-1212-EFDE-1523-785FEABCD123")
     public static let ledCharacteristicUUID    = CBUUID.init(string: "00001525-1212-EFDE-1523-785FEABCD123")
     
     // MARK: - Properties
     
     private let centralManager                : CBCentralManager
     private let basePeripheral                : CBPeripheral
-    private var ledCharacteristic             : CBCharacteristic?
     public private(set) var advertisedName    : String?
     public private(set) var RSSI              : NSNumber
-    public var delegate                       : BlinkyDelegate?
-
+    
+    public var delegate: BlinkyDelegate?
+    
     // MARK: - Computed variables
     
     public var isConnected: Bool {
         return basePeripheral.state == .connected
     }
 
+    // MARK: - Characteristic properties
+    
+    private var buttonCharacteristic: CBCharacteristic?
+    private var ledCharacteristic   : CBCharacteristic?
+    
     // MARK: - Public API
     
-    /// Creates the BlinkyPeripheral based on the received peripheral and advertisign data.
+    /// Creates teh BlinkyPeripheral based on the received peripheral and advertisign data.
     /// The device name is obtaied from the advertising data, not from CBPeripheral object
     /// to avoid caching problems.
-    
     init(withPeripheral peripheral: CBPeripheral, advertisementData advertisementDictionary: [String : Any], andRSSI currentRSSI: NSNumber, using manager: CBCentralManager) {
         centralManager = manager
         basePeripheral = peripheral
@@ -75,6 +89,21 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
         }
     }
     
+    /// Reads value of Button Characteristic. If such characteristic was not
+    /// found, this method does nothing. If it was found, but does not have
+    /// read property, the delegate will be notified with isPressed = false.
+    public func readButtonValue() {
+        if let buttonCharacteristic = buttonCharacteristic {
+            if buttonCharacteristic.properties.contains(.read) {
+                print("Reading Button characteristic...")
+                basePeripheral.readValue(for: buttonCharacteristic)
+            } else {
+                print("Can't read Button state")
+                delegate?.buttonStateChanged(isPressed: false)
+            }
+        }
+    }
+    
     /// Sends a request to turn the LED on.
     public func turnOnLED() {
         writeLEDCharcateristic(withValue: Data([0x1]))
@@ -85,33 +114,34 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
         writeLEDCharcateristic(withValue: Data([0x0]))
     }
     
+    // MARK: - Implementation
+    
     /// Starts service discovery, only for LED Button Service.
     private func discoverBlinkyServices() {
         print("Discovering LED Button service...")
         basePeripheral.delegate = self
         basePeripheral.discoverServices([BlinkyPeripheral.nordicBlinkyServiceUUID])
     }
-
-    // MARK: - Implementation
     
-    /// Starts characteristic discovery for LED Characteristics.
+    /// Starts characteristic discovery for LED and Button Characteristics.
     private func discoverCharacteristicsForBlinkyService(_ service: CBService) {
-        print("Discovering LED characteristrics...")
+        print("Discovering LED and Button characteristrics...")
         basePeripheral.discoverCharacteristics(
-            [BlinkyPeripheral.ledCharacteristicUUID],
+            [BlinkyPeripheral.buttonCharacteristicUUID, BlinkyPeripheral.ledCharacteristicUUID],
             for: service)
     }
     
     /// Enables notification for given characteristic.
     /// If the characteristic does not have notify property, this method will
     /// call delegate's blinkyDidConnect method and try to read values
-    /// of the LED.
+    /// of LED and Button.
     private func enableNotifications(for characteristic: CBCharacteristic) {
         if characteristic.properties.contains(.notify) {
             print("Enabling notifications for characteristic...")
             basePeripheral.setNotifyValue(true, for: characteristic)
         } else {
-            delegate?.blinkyDidConnect(ledSupported: ledCharacteristic != nil)
+            delegate?.blinkyDidConnect(ledSupported: ledCharacteristic != nil, buttonSupported: true)
+            readButtonValue()
             readLEDValue()
         }
     }
@@ -144,6 +174,12 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
         delegate?.ledStateChanged(isOn: value[0] == 0x1)
     }
     
+    /// A callback called when the Button characteristic value has changed.
+    private func didReceiveButtonNotification(withValue value: Data) {
+        print("Button value changed to: \(value[0])")
+        delegate?.buttonStateChanged(isPressed: value[0] == 0x1)
+    }
+
     private func parseAdvertisementData(_ advertisementDictionary: [String : Any]) -> String? {
         var advertisedName: String
 
@@ -196,10 +232,23 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
     // MARK: - CBPeripheralDelegate
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if characteristic == ledCharacteristic {
+        if characteristic == buttonCharacteristic {
+            if let value = characteristic.value {
+                didReceiveButtonNotification(withValue: value)
+            }
+        } else if characteristic == ledCharacteristic {
             if let value = characteristic.value {
                 didWriteValueToLED(value)
             }
+        }
+    }
+
+    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+        if characteristic == buttonCharacteristic {
+            print("Button notifications enabled")
+            delegate?.blinkyDidConnect(ledSupported: ledCharacteristic != nil, buttonSupported: buttonCharacteristic != nil)
+            readButtonValue()
+            readLEDValue()
         }
     }
 
@@ -207,7 +256,7 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
         if let services = peripheral.services {
             for service in services {
                 if service.uuid == BlinkyPeripheral.nordicBlinkyServiceUUID {
-                    print("LED service found")
+                    print("LED Button service found")
                     //Capture and discover all characteristics for the blinky service
                     discoverCharacteristicsForBlinkyService(service)
                     return
@@ -215,23 +264,31 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
             }
         }
         // Blinky service has not been found
-        delegate?.blinkyDidConnect(ledSupported: false)
+        delegate?.blinkyDidConnect(ledSupported: false, buttonSupported: false)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
-                if characteristic.uuid == BlinkyPeripheral.ledCharacteristicUUID {
+                if characteristic.uuid == BlinkyPeripheral.buttonCharacteristicUUID {
+                    print("Button characteristic found")
+                    buttonCharacteristic = characteristic
+                } else if characteristic.uuid == BlinkyPeripheral.ledCharacteristicUUID {
                     print("LED characteristic found")
                     ledCharacteristic = characteristic
                 }
             }
         }
         
-        // notify the delegate and try to read LED state.
-        delegate?.blinkyDidConnect(ledSupported: ledCharacteristic != nil)
-        // This method will do nothing if LED characteristics was not found.
-        readLEDValue()
+        // If Button caracteristic was found, try to enable notifications on it.
+        if let buttonCharacteristic = buttonCharacteristic {
+            enableNotifications(for: buttonCharacteristic)
+        } else {
+            // else, notify the delegate and try to read LED state.
+            delegate?.blinkyDidConnect(ledSupported: ledCharacteristic != nil, buttonSupported: false)
+            // This method will do nothing if LED characteristics was not found.
+            readLEDValue()
+        }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
@@ -239,4 +296,3 @@ class BlinkyPeripheral: NSObject, CBPeripheralDelegate, CBCentralManagerDelegate
         readLEDValue()
     }
 }
-

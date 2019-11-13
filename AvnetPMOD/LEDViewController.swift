@@ -8,7 +8,8 @@
 
 import UIKit
 
-class LEDViewController: UIViewController {
+class LEDViewController: UIViewController, BlinkyDelegate {
+ 
 
     @IBOutlet weak var ledColor        : UILabel!
     @IBOutlet weak var redSwitchState  : UISwitch!
@@ -16,13 +17,48 @@ class LEDViewController: UIViewController {
     @IBOutlet weak var greenSwitchState: UISwitch!
     @IBOutlet weak var binioState      : UILabel!
     @IBOutlet weak var binioSwitch     : UISwitch!
+
+    private var blinkyPeripheral       : BlinkyPeripheral!
+    
+    //var centralManager                 : CBCentralManager!
     
     var localLEDcolor          : uint=0
     var localBINIOstate        : Bool = false
+     
+// MARK: - functionallity associated with BlinkyDelegate
+
+    // This function is called from the ViewController to establish the PMOD peripheral that
+    // we are talking with
+    public func setPMOD(_ peripheral: BlinkyPeripheral) {
+        blinkyPeripheral = peripheral
+        peripheral.delegate = self
+        print("in setPMOD")
+    }
+
+     func blinkyDidConnect(ledSupported: Bool, buttonSupported: Bool) {
+         print("in blinkyDidConnect")
+     }
+     
+     func blinkyDidDisconnect() {
+         print("in blinkyDidDisconnect")
+     }
+     
+     func buttonStateChanged(isPressed: Bool) {
+         print("in buttonStateChanged")
+     }
+     
+     func ledStateChanged(isOn: Bool) {
+         print("in ledStateChanged")
+     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        print("in viewDidLoad")
+        
+        guard !blinkyPeripheral.isConnected else {
+            return
+        }
         // Do any additional setup after loading the view.
         if( localBINIOstate ) {
             binioSwitch.isOn = true
@@ -44,9 +80,13 @@ class LEDViewController: UIViewController {
         }
 
         setColorLabel(localLEDcolor)
+        blinkyPeripheral.connect()
     }
     
-
+    override func viewDidDisappear(_ animated: Bool) {
+        blinkyPeripheral.disconnect()
+        super.viewWillAppear(animated)
+    }
     
     /*
     // MARK: - Navigation
